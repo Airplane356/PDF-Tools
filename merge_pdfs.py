@@ -22,13 +22,30 @@ def main():
     inputs = [Path(p) for p in sys.argv[2:]]
 
     writer = PdfWriter()
+    
     for pdf_path in inputs:
-        reader = PdfReader(str(pdf_path))
-        for page in reader.pages:
-            writer.add_page(page)
+        try: 
+            reader = PdfReader(str(pdf_path))
+            
+            # check if pdf needs password
+            if reader.is_encrypted:
+                print(f"[info] '{pdf_path}' is password-protected.")
+                password = input("Enter password: ")
+                if not reader.decrypt(password):
+                    print(f"[error] Incorrect password for '{pdf_path}'. Skipping.")
+                    continue
+                
+            for page in reader.pages:
+                writer.add_page(page)
+                print(f"[ok] Added: {pdf_path}")
+                
+        except Exception as e:
+            print(f"[error] Could not read '{pdf_path}': {e}")
 
     output.parent.mkdir(parents=True, exist_ok=True)
     with open(output, "wb") as f:
         writer.write(f)
+        
+    print(f"[done] Wrote merged PDF: {output}")
 
 main()
